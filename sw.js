@@ -1,13 +1,14 @@
-const CACHE_NAME = 'imkoniyatlar-kaliti-24-7-v5';
+const CACHE_NAME = 'imkoniyatlar-kaliti-24-7-v7';
 const ASSETS = [
   './',
   './index.html',
-  './css/style.css?v=5',
-  './js/i18n.js?v=5',
-  './js/data-telecom.js?v=5',
-  './js/data-subjects.js?v=5',
-  './js/data-extra.js?v=5',
-  './js/app.js?v=5',
+  './css/style.css?v=7',
+  './js/i18n.js?v=7',
+  './js/data-telecom.js?v=7',
+  './js/data-unique-bank.js?v=7',
+  './js/data-subjects.js?v=7',
+  './js/data-extra.js?v=7',
+  './js/app.js?v=7',
   './assets/logo.png',
   './assets/bg-education.png'
 ];
@@ -29,6 +30,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('/api/')) return;
   event.respondWith(
     fetch(event.request, { cache: 'no-cache' })
       .then(res => {

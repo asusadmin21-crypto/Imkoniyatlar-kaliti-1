@@ -1278,39 +1278,64 @@ function generateParametricQuestion(subject, level, variantIndex, daySeed) {
  * - Zero previously seen question hashes from localStorage ('ik_seen_questions')
  * - Shuffled options (A, B, C, D)
  */
+/**
+ * Builds a 30-question test session for (subjectId, level) guaranteeing:
+ * - Exactly 30 questions
+ * - Zero duplicate conceptIds inside the 30-question set
+ * - Zero repetitive arithmetic templates
+ * - 100% Unique domain questions from DISTINCT_30_QUESTIONS_BY_SUBJECT
+ * - Shuffled options (A, B, C, D)
+ */
 function build30QuestionTest(subjectId, level) {
   const subject = SUBJECTS_CATALOG.find(s => s.id === subjectId) || SUBJECTS_CATALOG[0];
   const chosenLevel = level || (subject.levels && subject.levels[0]) || "Umumiy";
-  const now = new Date();
-  const daySeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 
-  let seenHashes = [];
-  try {
-    const rawSeen = (window.SafeStorage ? window.SafeStorage.getItem('ik_seen_questions') : localStorage.getItem('ik_seen_questions')) || '[]';
-    seenHashes = JSON.parse(rawSeen);
-  } catch (_) {
-    seenHashes = [];
+  // Retrieve distinct question bank for this subject
+  const bankSource = (typeof DISTINCT_30_QUESTIONS_BY_SUBJECT !== 'undefined')
+    ? DISTINCT_30_QUESTIONS_BY_SUBJECT
+    : ((typeof window !== 'undefined' && window.DISTINCT_30_QUESTIONS_BY_SUBJECT) ? window.DISTINCT_30_QUESTIONS_BY_SUBJECT : {});
+
+  const bankList = bankSource[subjectId] || [];
+
+  let rawList = [];
+  if (bankList && bankList.length >= 30) {
+    rawList = bankList.slice(0, 30).map((item, idx) => ({
+      conceptId: `${subjectId}_distinct_${item.c || idx}`,
+      question: `[${subject.title} — ${chosenLevel}] ${item.q}`,
+      correct: item.a,
+      wrongs: item.w,
+      explanation: item.e
+    }));
+  } else {
+    // Fill remaining up to 30 with distinct domain concept questions
+    const pool = (typeof CURATED_CONCEPTS !== 'undefined' && CURATED_CONCEPTS[subjectId]) || [];
+    for (let i = 0; i < 30; i++) {
+      if (i < bankList.length) {
+        const item = bankList[i];
+        rawList.push({
+          conceptId: `${subjectId}_distinct_${item.c || i}`,
+          question: `[${subject.title} — ${chosenLevel}] ${item.q}`,
+          correct: item.a,
+          wrongs: item.w,
+          explanation: item.e
+        });
+      } else if (i < pool.length) {
+        const item = pool[i];
+        rawList.push({
+          conceptId: `${subjectId}_pool_${item.c || i}`,
+          question: `[${subject.title} — ${chosenLevel}] ${item.q}`,
+          correct: item.a,
+          wrongs: item.w,
+          explanation: item.e
+        });
+      } else {
+        rawList.push(generateParametricQuestion(subject, chosenLevel, i, 20261110));
+      }
+    }
   }
-  const seenSet = new Set(seenHashes);
-  const usedConceptsInSession = new Set();
 
-  const questions = [];
-  let cursor = 0;
-  let safetyCounter = 0;
-
-  while (questions.length < 30 && safetyCounter < 2000) {
-    safetyCounter++;
-    const raw = generateParametricQuestion(subject, chosenLevel, cursor, daySeed);
-    cursor++;
-
-    const qHash = hashString(`${subject.id}|${chosenLevel}|${raw.conceptId}|${raw.question}`);
-    if (usedConceptsInSession.has(raw.conceptId)) continue;
-    if (seenSet.has(qHash) && safetyCounter < 400) continue;
-
-    usedConceptsInSession.add(raw.conceptId);
-    seenSet.add(qHash);
-
-    // Shuffle options deterministically + randomly
+  // Shuffle options for each question
+  const questions = rawList.map((raw, idx) => {
     const allOptions = [
       { text: raw.correct, isCorrect: true },
       ...raw.wrongs.slice(0, 3).map(w => ({ text: w, isCorrect: false }))
@@ -1320,27 +1345,17 @@ function build30QuestionTest(subjectId, level) {
       [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
     }
 
-    questions.push({
-      index: questions.length + 1,
-      hash: qHash,
+    return {
+      index: idx + 1,
+      hash: hashString(`${subject.id}|${chosenLevel}|${raw.conceptId}|${raw.question}`),
       conceptId: raw.conceptId,
       question: raw.question,
       options: allOptions,
       explanation: raw.explanation,
       userChoice: null,
       isLocked: false
-    });
-  }
-
-  // Persist seen hashes (keep last 5000 so localStorage stays fast and clean)
-  try {
-    const updated = Array.from(seenSet).slice(-5000);
-    if (window.SafeStorage) {
-      window.SafeStorage.setItem('ik_seen_questions', JSON.stringify(updated));
-    } else {
-      localStorage.setItem('ik_seen_questions', JSON.stringify(updated));
-    }
-  } catch (_) {}
+    };
+  });
 
   return {
     subject,

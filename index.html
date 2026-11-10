@@ -47,10 +47,10 @@
   }
   </script>
 
-  <link rel="manifest" href="manifest.json?v=5" />
+  <link rel="manifest" href="manifest.json?v=7" />
   <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="apple-touch-icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
 
@@ -58,7 +58,7 @@
   <div class="global-backdrop" aria-hidden="true"></div>
 
   <!-- ========================================================================
-       LIVE TOP STATUS BAR (Admin Name, Observers Count, Clock, Weather, Currencies)
+       LIVE TOP STATUS BAR (Admin Name, Real Observers, 8K Adaptive Quality, Clock, Weather, Currencies)
        Visible across all windows & operating systems!
        ======================================================================== -->
   <div class="live-topbar">
@@ -71,8 +71,12 @@
         <span class="live-pill" style="background:linear-gradient(90deg, rgba(245,158,11,0.25), rgba(16,185,129,0.22)); border-color:#fbbf24; color:#fde68a; font-weight:800;">
           👑 Sayt admini: <strong>Usmonov Azimjon Akmaljon o'g'li</strong>
         </span>
-        <span class="live-pill" title="Jonli kuzatuvchilar soni">
-          👁️ Kuzatuvchilar: Onlayn <strong class="js-online-observers" style="color:#34d399;">174</strong> | Bugun <strong class="js-today-observers" style="color:#38bdf8;">1,846</strong> | Jami <strong class="js-total-observers" style="color:#fbbf24;">58,421</strong>
+        <span class="live-pill" title="Haqiqiy jonli kuzatuvchilar soni (real vaqt rejimida)">
+          👁️ Haqiqiy kuzatuvchilar: Onlayn <strong class="js-online-observers" style="color:#34d399;">1</strong> | Bugun <strong class="js-today-observers" style="color:#38bdf8;">1</strong> | Jami <strong class="js-total-observers" style="color:#fbbf24;">1</strong>
+        </span>
+        <span class="live-pill quality-pill" title="Barcha operatsion tizimlarda foydalanuvchiga mos 8K Ultra HD tasvir sifati (Kachestva)">
+          📺 Sifat:
+          <select id="qualitySelectDropdown" class="city-select quality-select" title="Qurilmangizga mos tasvir sifatini (8K Ultra HD gacha) tanlang"></select>
         </span>
       </div>
 
@@ -134,15 +138,18 @@
           🏆 <span data-i18n="navCertSample">5x A'lo Sertifikat</span>
         </button>
         <button class="nav-btn" data-target="viewPromo" onclick="switchView('viewPromo')">
-          📣 <span>Reklama va Ulashish</span>
+          📢 <span>Reklama va Taklif</span>
         </button>
         <button class="nav-btn" data-target="viewForum" onclick="switchView('viewForum'); renderForumPosts();">
-          💬 <span data-i18n="navForum">Bildirgi va Muhokama</span>
+          💬 <span data-i18n="navForum">Fikr Almashish & Kommentariyalar</span>
         </button>
       </nav>
 
-      <!-- Language Switcher (UZ / RU / EN / TJ / TR / AF) & Certificate Status Chip -->
+      <!-- Language Switcher (UZ / RU / EN / TJ / TR / AF) & Theme Customizer & Certificate Status Chip -->
       <div class="header-controls">
+        <button class="theme-picker-btn" onclick="openThemeModal()" title="Sayt rangini o'zingizga qulay qilib o'zgartiring">
+          🎨 <span>Ranglar</span>
+        </button>
         <div class="lang-switcher" title="Sayt interfeysi tili (Tojik, Turk, Afg'on tillari bilan)">
           <button class="lang-btn active" data-lang="uz" onclick="setLanguage('uz')">UZ</button>
           <button class="lang-btn" data-lang="tj" onclick="setLanguage('tj')">🇹🇯 TJ</button>
@@ -165,16 +172,93 @@
 
     <!-- ==================== 1. HOME / MAIN MENU VIEW ==================== -->
     <section id="viewHome">
-      <!-- Persistent Admin & Observers Banner inside Home Window -->
+      <!-- Persistent Admin, Real Observers & 8K Adaptive Quality Banner inside Home Window -->
       <div class="window-admin-showcase">
         <div>
           👑 <strong>Sayt Admini va Asoschisi:</strong> <span class="admin-gold-name">Usmonov Azimjon Akmaljon o'g'li</span>
         </div>
-        <div style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.86rem;">
-          <span>🟢 Onlayn kuzatuvchilar: <strong class="js-online-observers" style="color:#34d399;">174</strong></span>
-          <span>📅 Bugungi kuzatuvchilar: <strong class="js-today-observers" style="color:#38bdf8;">1,846</strong></span>
-          <span>👁️ Jami kuzatuvchilar: <strong class="js-total-observers" style="color:#fbbf24;">58,421</strong></span>
+        <div style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.86rem; align-items:center;">
+          <span>🟢 Haqiqiy Onlayn: <strong class="js-online-observers" style="color:#34d399;">1</strong></span>
+          <span>📅 Bugun: <strong class="js-today-observers" style="color:#38bdf8;">1</strong></span>
+          <span>👁️ Jami: <strong class="js-total-observers" style="color:#fbbf24;">1</strong></span>
+          <span style="padding:3px 10px; border-radius:999px; background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.45); color:#a5f3fc; font-weight:700;">
+            📺 <span class="js-active-quality-badge">8K Avto-Mos (Qurilmaga mos sifat)</span>
+          </span>
         </div>
+      </div>
+
+      <!-- ==================== FOYDALANUVCHI FAOLLIGI, 5 YULDUZ & TAKLIF QILISH MARKAZI ==================== -->
+      <div class="activity-referral-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+          <div>
+            <div style="font-size:0.8rem; color:#fde68a; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+              🌟 Foydalanuvchi Faolligi va Taklif Qilish Koeffitsiyenti
+            </div>
+            <h3 style="color:#ffffff; margin:4px 0; font-size:1.24rem;">
+              Sizning Maqomingiz: <span class="js-user-tier-badge" style="color:#fbbf24; font-weight:900;">Yangi Bilim Izlovchi</span>
+            </h3>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.78rem; color:var(--text-muted);">Sizning Taklif Quvvatingiz:</div>
+            <div style="font-size:1.6rem; font-weight:900; color:#34d399; text-shadow:0 0 14px rgba(52,211,153,0.5);" class="js-referral-power-val">1x</div>
+          </div>
+        </div>
+
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px; line-height:1.6;">
+          Saytda qancha ko'p kirib foydalansangiz, dars o'qisangiz va 5 yulduz baho bergan sari boshqa foydalanuvchilarga taklif qilish koeffitsiyentingiz oshib boradi hamda reytingda eng yuqori VIP imtiyozlar beriladi!
+        </p>
+
+        <!-- Stats Chips -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:16px;">
+          <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-dim);">👁️ Tashriflar:</div>
+            <strong style="color:#38bdf8; font-size:1.1rem;" class="js-user-visits-count">1</strong> marta
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-dim);">📝 Yechilgan Testlar:</div>
+            <strong style="color:#a78bfa; font-size:1.1rem;" class="js-user-tests-count">0</strong> ta
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-dim);">📖 O'qilgan Darslar:</div>
+            <strong style="color:#6ee7b7; font-size:1.1rem;" class="js-user-theories-count">0</strong> ta
+          </div>
+          <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:10px; text-align:center;">
+            <div style="font-size:0.75rem; color:var(--text-dim);">⭐️ Berilgan 5 Yulduzlar:</div>
+            <strong style="color:#fbbf24; font-size:1.1rem;" class="js-user-stars-count">0</strong> ta
+          </div>
+        </div>
+
+        <!-- 5-Star Interactive Rating Block -->
+        <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:12px; padding:14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-weight:700; color:#fbbf24; font-size:0.96rem;">⭐️ Saytga 5 Yulduz Baho Bering!</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">Har gal 5 yulduz bosganingizda taklif qilish quvvatingiz +2x ga ko'tariladi!</div>
+          </div>
+          <div class="star-rating-interactive" id="homeStarWidget" title="5 yulduz qo'yish uchun bosing">
+            <span onclick="give5StarRating(1)">★</span>
+            <span onclick="give5StarRating(2)">★</span>
+            <span onclick="give5StarRating(3)">★</span>
+            <span onclick="give5StarRating(4)">★</span>
+            <span onclick="give5StarRating(5)">★</span>
+          </div>
+        </div>
+
+        <!-- Share / Invite buttons -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-primary" onclick="shareReferralLink('telegram')" style="padding:8px 16px;">
+            ✈️ Telegramda Taklif Qilish
+          </button>
+          <button class="btn btn-success" onclick="shareReferralLink('whatsapp')" style="padding:8px 16px;">
+            💬 WhatsAppda Do'stlarga Yuborish
+          </button>
+          <button class="btn btn-gold" onclick="copyPersonalReferralLink()" style="padding:8px 16px;">
+            📋 Taklif Havolasini Nusxalash
+          </button>
+          <button class="theme-picker-btn" onclick="openThemeModal()" style="margin-left:auto; padding:8px 16px;">
+            🎨 Sayt Rangini Tanlash
+          </button>
+        </div>
+        <div id="referralCopyNotice" style="color:#34d399; font-weight:700; font-size:0.85rem; margin-top:8px;"></div>
       </div>
 
       <div class="hero-banner">
@@ -221,12 +305,12 @@
             <!-- Main Menu Visit & Usage Statistics -->
             <div class="stats-grid">
               <div class="stat-card">
-                <div class="stat-value"><span class="js-total-observers">58,421</span></div>
-                <div class="stat-label">Jami kuzatuvchilar soni</div>
+                <div class="stat-value"><span class="js-total-observers">1</span></div>
+                <div class="stat-label">Jami haqiqiy kuzatuvchilar</div>
               </div>
               <div class="stat-card green">
-                <div class="stat-value"><span class="js-online-observers">174</span> ta</div>
-                <div class="stat-label">Hozir onlayn kuzatuvchilar</div>
+                <div class="stat-value"><span class="js-online-observers">1</span> ta</div>
+                <div class="stat-label">Hozir haqiqiy onlayn</div>
               </div>
               <div class="stat-card">
                 <div class="stat-value" id="statVisitsVal">1 marta</div>
@@ -295,7 +379,7 @@
     <section id="viewDictionary" class="hidden">
       <div class="window-admin-showcase">
         <div>👑 <strong>Sayt Admini:</strong> <span class="admin-gold-name">Usmonov Azimjon Akmaljon o'g'li</span></div>
-        <div>🌍 <strong>Bo'lim:</strong> Barcha tillarga boshlang'ichdan (A1) to oxirigacha (C2) Cheksiz Lug'at | 👁️ Onlayn: <strong class="js-online-observers">174</strong></div>
+        <div>🌍 <strong>Bo'lim:</strong> Barcha tillarga boshlang'ichdan (A1) to oxirigacha (C2) Cheksiz Lug'at | 👁️ Haqiqiy Onlayn: <strong class="js-online-observers">1</strong> | 📺 <span class="js-active-quality-badge">8K Avto-Mos</span></div>
       </div>
 
       <div class="subview-backbar">
@@ -714,12 +798,13 @@
           <div id="promoCopyStatus" style="color:#34d399; font-weight:700; font-size:0.9rem; margin-bottom:14px;"></div>
 
           <div class="theory-block" style="margin-bottom:0;">
-            <h4 style="color:#fbbf24; margin-bottom:8px;">👁️ Jonli Kuzatuvchilar va Operatsion Tizimlar Qamrovi:</h4>
-            <p style="font-size:0.9rem; margin-bottom:4px;">🟢 Hozir saytni kuzatayotganlar (Onlayn): <strong class="js-online-observers" style="color:#34d399;">174</strong> kishi</p>
-            <p style="font-size:0.9rem; margin-bottom:4px;">📅 Bugungi tashrif buyuruvchilar: <strong class="js-today-observers" style="color:#38bdf8;">1,846</strong> kishi</p>
-            <p style="font-size:0.9rem; margin-bottom:4px;">🌍 Jami kuzatuvchilar soni: <strong class="js-total-observers" style="color:#fbbf24;">58,421</strong> kishi</p>
+            <h4 style="color:#fbbf24; margin-bottom:8px;">👁️ Haqiqiy Jonli Kuzatuvchilar va 8K Adaptive Operatsion Tizimlar Qamrovi:</h4>
+            <p style="font-size:0.9rem; margin-bottom:4px;">🟢 Hozir saytni kuzatayotgan haqiqiy foydalanuvchilar (Onlayn): <strong class="js-online-observers" style="color:#34d399;">1</strong> kishi</p>
+            <p style="font-size:0.9rem; margin-bottom:4px;">📅 Bugungi tashrif buyuruvchilar: <strong class="js-today-observers" style="color:#38bdf8;">1</strong> kishi</p>
+            <p style="font-size:0.9rem; margin-bottom:4px;">🌍 Jami kuzatuvchilar soni: <strong class="js-total-observers" style="color:#fbbf24;">1</strong> kishi</p>
+            <p style="font-size:0.9rem; margin-bottom:4px;">🖥️ Sizning operatsion tizimingiz: <strong class="js-detected-os" style="color:#a5f3fc;">Aniqlanmoqda...</strong> | 📺 Tasvir sifati: <strong class="js-active-quality-badge" style="color:#fde68a;">8K Avto-Mos</strong></p>
             <p style="font-size:0.84rem; color:var(--text-muted); margin-top:8px;">
-              💻 Barcha operatsion tizimlarda (Windows, Android, iPhone/iPad iOS, macOS, Linux, Smart TV) foydalanuvchilar hech qanday qiyinchiliksiz, tez va qulay foydalanishi uchun 100% moslashtirilgan!
+              💻 Barcha operatsion tizimlarda (Windows, Android, iPhone/iPad iOS, macOS, Linux, Smart TV) foydalanuvchi qurilmasiga 100% moslashuvchi <strong>8K Ultra HD</strong> sifat bilan tez va qulay ishlaydi!
             </p>
           </div>
         </div>
@@ -730,14 +815,14 @@
     <section id="viewForum" class="hidden">
       <div class="window-admin-showcase">
         <div>👑 <strong>Sayt Admini:</strong> <span class="admin-gold-name">Usmonov Azimjon Akmaljon o'g'li</span></div>
-        <div>💬 <strong>Bo'lim:</strong> Foydalanuvchilar Bildirgisi, Savol-Javob va Admin Bilan Muhokama</div>
+        <div>💬 <strong>Bo'lim:</strong> Foydalanuvchilar O'zaro Ma'lumot Almashish, Fikrlar va Jonli Kommentariyalar Forumi</div>
       </div>
 
       <div class="subview-backbar">
         <div>
-          <h2>💬 Foydalanuvchilar Bildirgisi, Savol-Javob va Admin Bilan Muhokama</h2>
+          <h2>💬 Foydalanuvchilar O'zaro Fikr va Ma'lumot Almashish Bo'limi</h2>
           <p style="font-size:0.86rem; color:var(--text-muted);">
-            Sayt haqida o'z fikringizni qoldiring, boshqa foydalanuvchilar bilan savol-javob qiling yoki Sayt Admini <strong>Usmonov Azimjon Akmaljon o'g'li</strong> (<strong>asusadmin21@gmail.com</strong>) bilan bog'laning
+            O'quvchilar, talabalar va o'qituvchilar bir-birlari bilan bilim, darslik maslahatlari, qiyin savollar yechimi va amaliy tajriba almashishlari mumkin!
           </p>
         </div>
         <button class="btn-exit-back" onclick="switchView('viewHome')">
@@ -745,34 +830,47 @@
         </button>
       </div>
 
+      <!-- Category Filter Pills -->
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;" id="forumCategoryFilterBar">
+        <button type="button" class="theme-chip-btn active" onclick="filterForumCategory('all')">🌐 Barcha Fikrlar</button>
+        <button type="button" class="theme-chip-btn" onclick="filterForumCategory('prog')">💻 Dasturlash & IT</button>
+        <button type="button" class="theme-chip-btn" onclick="filterForumCategory('med')">🩺 Tibbiyot & Meditsina</button>
+        <button type="button" class="theme-chip-btn" onclick="filterForumCategory('lang')">🌍 Tillar & Lug'at</button>
+        <button type="button" class="theme-chip-btn" onclick="filterForumCategory('science')">📐 Aniq Fanlar</button>
+        <button type="button" class="theme-chip-btn" onclick="filterForumCategory('preschool')">🧸 Bog'cha & Maktab</button>
+      </div>
+
       <div class="test-workspace" style="margin-bottom:22px;">
-        <h3 style="margin-bottom:12px; color:#38bdf8;">✍️ Yangi Bildirgi, Fikr yoki Savol Qoldirish</h3>
+        <h3 style="margin-bottom:12px; color:#38bdf8;">✍️ Yangi Ma'lumot, Fikr yoki Savol Qoldirish</h3>
         <form onsubmit="handleNewForumPost(event)">
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:12px;">
             <div>
               <label style="font-size:0.82rem; color:var(--text-muted);">Ism-Familiyangiz:</label>
-              <input type="text" id="forumAuthorInput" class="form-input" placeholder="F.I.Sh." />
+              <input type="text" id="forumAuthorInput" class="form-input" placeholder="F.I.Sh. yoki Taxallusingiz" />
             </div>
             <div>
-              <label style="font-size:0.82rem; color:var(--text-muted);">Murojaat yo'nalishi:</label>
+              <label style="font-size:0.82rem; color:var(--text-muted);">Mavzu Toifasi / Yo'nalish:</label>
               <select id="forumCategorySelect" class="form-input">
-                <option value="Sayt haqida fikr va bildirgi">🌟 Sayt haqida fikr va bildirgi</option>
-                <option value="Sayt Admini Usmonov Azimjon Akmaljon o'g'liga savol va taklif">👑 Sayt Admini Usmonov Azimjon Akmaljon o'g'liga savol va taklif</option>
-                <option value="Cheksiz Lug'at (Tojik, Turk, Afg'on va jahon tillari) muhokamasi">🌍 Cheksiz Lug'at (Tojik, Turk, Afg'on va jahon tillari) muhokamasi</option>
-                <option value="Bog'cha she'rlari va Maktabga tayyorgarlik darsliklari">🧸 Bog'cha she'rlari va Maktabga tayyorgarlik darsliklari</option>
-                <option value="IT, Tibbiyot va Telekommunikatsiya savol-javoblari">💻 IT, Tibbiyot va Telekommunikatsiya savol-javoblari</option>
+                <option value="Dasturlash & IT tajribalari">💻 Dasturlash & IT tajribalari (HTML, CSS, JS, Python...)</option>
+                <option value="Tibbiyot & Klinik amaliyot">🩺 Tibbiyot & Klinik amaliyot (Anatomiya, Farmakologiya...)</option>
+                <option value="Chet tillari & Lug'at boyligi">🌍 Chet tillari (Tojik, Turk, Afg'on, Ingliz, Rus...)</option>
+                <option value="Aniq va Tabiiy fanlar bo'yicha maslahat">📐 Aniq va Tabiiy fanlar (Matematika, Fizika, Kimyo...)</option>
+                <option value="Bog'cha she'rlari & Maktab metodikasi">🧸 Bog'cha she'rlari & Maktab metodikasi</option>
+                <option value="Sayt haqida fikr va takliflar">🌟 Sayt haqida fikr va takliflar</option>
               </select>
             </div>
           </div>
           <div class="form-group">
-            <textarea id="forumMessageInput" rows="3" class="form-textarea" required placeholder="O'z fikringiz, savolingiz yoki taklifingizni yozing..."></textarea>
+            <textarea id="forumMessageInput" rows="3" class="form-textarea" required placeholder="Boshqa o'rganuvchilar bilan bo'lishmoqchi bo'lgan ma'lumotingiz, savolingiz yoki amaliy maslahatingizni yozing..."></textarea>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <button type="submit" class="btn btn-primary">📤 Bildirgini E'lon Qilish</button>
+            <button type="submit" class="btn btn-primary">📤 Fikrni E'lon Qilish (Barchaga ko'rinadi)</button>
             <a href="mailto:asusadmin21@gmail.com?subject=Imkoniyatlar%20Kaliti%20Foydalanuvchi%20Murojaati" class="btn btn-gold">
               ✉️ Admin Usmonov Azimjon Akmaljon o'g'liga yozish (asusadmin21@gmail.com)
             </a>
           </div>
+        </form>
+      </div>
         </form>
       </div>
 
@@ -780,6 +878,84 @@
     </section>
 
   </main>
+
+  <!-- ========================================================================
+       THEME & COLOR CUSTOMIZER MODAL (Foydalanuvchi sayt rangini o'zgartira oladi)
+       ======================================================================== -->
+  <div id="themeModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width:580px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="color:#fbbf24; margin:0; display:flex; align-items:center; gap:8px;">
+          🎨 Sayt Rangini O'zgartirish (Mavzular Palitrasi)
+        </h3>
+        <button type="button" onclick="closeThemeModal()" style="background:none; border:none; color:#cbd5e1; font-size:24px; cursor:pointer; line-height:1;">&times;</button>
+      </div>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">
+        O'zingizga yoqqan va ko'zingizga qulay ranglar palitrasini tanlang yoki o'z xohishingizga ko'ra istalgan fon, karta va urg'u ranglarini erkin sozlang:
+      </p>
+
+      <!-- Preset theme cards -->
+      <h4 style="font-size:0.92rem; color:#38bdf8; margin-bottom:8px;">Tayyor Mavzular:</h4>
+      <div class="theme-presets-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(125px, 1fr)); gap:8px; margin-bottom:18px;">
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('default')">🌌 Koinot Neon</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('emerald')">🌿 Zumrad Yashil</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('ocean')">🌊 Moviy Okean</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('gold')">👑 Qirollik Oltini</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('ruby')">🍷 Yoqut Qizil</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('cyber')">🔮 Kiberpank</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('amoled')">🖤 AMOLED Qora</button>
+        <button type="button" class="theme-chip-btn" onclick="applyPresetTheme('light')">☀️ Kunduzgi Oq</button>
+      </div>
+
+      <!-- Custom color pickers -->
+      <h4 style="font-size:0.92rem; color:#38bdf8; margin-bottom:8px;">Shaxsiy Ranglarni Tanlash:</h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Asosiy Tugma & Urg'u Rangi:</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="color" id="themePrimaryColor" class="theme-color-input" onchange="onCustomColorChange()" value="#3b82f6" />
+            <span id="themePrimaryColorCode" style="font-family:monospace; font-size:12px;">#3b82f6</span>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Asosiy Fon Rangi:</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="color" id="themeBgDarkColor" class="theme-color-input" onchange="onCustomColorChange()" value="#070d19" />
+            <span id="themeBgDarkColorCode" style="font-family:monospace; font-size:12px;">#070d19</span>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Blok va Kartalar Tusi:</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="color" id="themeBgCardColor" class="theme-color-input" onchange="onCustomColorChange()" value="#0f172a" />
+            <span id="themeBgCardColorCode" style="font-family:monospace; font-size:12px;">#0f172a</span>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;">Matn va Harflar Rangi:</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="color" id="themeTextColor" class="theme-color-input" onchange="onCustomColorChange()" value="#f8fafc" />
+            <span id="themeTextColorCode" style="font-family:monospace; font-size:12px;">#f8fafc</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Font scale -->
+      <div style="margin-bottom:18px;">
+        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:6px;">Shrift O'lchami va O'qish Qulayligi:</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary" onclick="setFontScale('normal')" style="padding:6px 14px; font-size:13px;">Standart (100%)</button>
+          <button type="button" class="btn btn-secondary" onclick="setFontScale('large')" style="padding:6px 14px; font-size:14px;">Kattaroq (110%)</button>
+          <button type="button" class="btn btn-secondary" onclick="setFontScale('xlarge')" style="padding:6px 14px; font-size:15px;">Katta & Tiniq (120%)</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        <button type="button" class="btn btn-secondary" onclick="resetDefaultTheme()">🔄 Asliga Qaytarish</button>
+        <button type="button" class="btn btn-gold" onclick="closeThemeModal()">✅ Saqlash va Chiqish</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
        CERTIFICATE RECIPIENT MODAL (Asked when downloading Certificate after 5x A'lo!)
@@ -829,24 +1005,25 @@
         (<a href="mailto:asusadmin21@gmail.com" style="color:#38bdf8;">asusadmin21@gmail.com</a>)
       </p>
       <p style="font-size:0.84rem; color:#cbd5e1; margin-bottom:6px;">
-        👁️ Jonli kuzatuvchilar: Onlayn <strong class="js-online-observers">174</strong> | Bugun <strong class="js-today-observers">1,846</strong> | Jami <strong class="js-total-observers">58,421</strong>
+        👁️ Haqiqiy jonli kuzatuvchilar: Onlayn <strong class="js-online-observers">1</strong> | Bugun <strong class="js-today-observers">1</strong> | Jami <strong class="js-total-observers">1</strong> | 📺 <span class="js-active-quality-badge">8K Avto-Mos</span>
       </p>
       <p style="font-size:0.78rem; color:var(--text-dim);">
-        Windows • macOS • Linux • Android • iOS (iPhone/iPad) | O'zbek • Тоҷикӣ • Türkçe • دری/پښتو • Русский • English | Cheksiz Lug'at, Bog'cha She'rlari, Maktab Darsliklari va 5x A'lo Sertifikat.
+        Windows • macOS • Linux • Android • iOS (iPhone/iPad) • Smart TV (8K Ultra HD Adaptive) | O'zbek • Тоҷикӣ • Türkçe • دری/پښتو • Русский • English | Cheksiz Lug'at, Bog'cha She'rlari, Maktab Darsliklari va 5x A'lo Sertifikat.
       </p>
     </div>
   </footer>
 
   <!-- Scripts -->
-  <script src="js/i18n.js?v=5"></script>
-  <script src="js/data-telecom.js?v=5"></script>
-  <script src="js/data-subjects.js?v=5"></script>
-  <script src="js/data-extra.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/i18n.js?v=7"></script>
+  <script src="js/data-telecom.js?v=7"></script>
+  <script src="js/data-unique-bank.js?v=7"></script>
+  <script src="js/data-subjects.js?v=7"></script>
+  <script src="js/data-extra.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=5').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=7').then(reg => {
           reg.update();
         }).catch(() => {});
       });

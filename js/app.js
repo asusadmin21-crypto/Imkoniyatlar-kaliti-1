@@ -460,6 +460,7 @@ function finalize30QuestionTest() {
   test.gradeLabel = gradeLabel;
 
   AppState.stats.solvedTests++;
+  trackUserActivity('testPassed');
   if (isExcellent) {
     AppState.stats.excellentCount++;
   }
@@ -615,18 +616,39 @@ function downloadCurrentTestResult(format) {
 function openSubjectTheory(subjectId) {
   const subject = SUBJECTS_CATALOG.find(s => s.id === subjectId) || SUBJECTS_CATALOG[0];
   const selectEl = document.getElementById(`levelSelect_${subjectId}`);
-  const level = selectEl ? selectEl.value : subject.levels[0];
+  const level = selectEl ? selectEl.value : (subject.levels && subject.levels[0]) || "Umumiy";
 
   switchView("viewTheory");
+
+  // Track user activity
+  trackUserActivity('theoryRead');
 
   const startStr = new Date().toLocaleTimeString();
   const container = document.getElementById("theoryContentContainer");
 
-  const theoryBlocksHtml = (subject.theory || []).map((th, idx) => `
+  const theoryBank = (typeof SUBJECT_DEEP_THEORY_BANK !== 'undefined')
+    ? SUBJECT_DEEP_THEORY_BANK
+    : ((typeof window !== 'undefined' && window.SUBJECT_DEEP_THEORY_BANK) ? window.SUBJECT_DEEP_THEORY_BANK : {});
+  const theoryList = (theoryBank && theoryBank[subjectId] && theoryBank[subjectId].length > 0)
+    ? theoryBank[subjectId]
+    : (subject.theory || []);
+
+  const theoryBlocksHtml = theoryList.map((th, idx) => `
     <div class="theory-block">
-      <h3>📌 ${idx + 1}. ${escapeHtml(th.title)} (${escapeHtml(level)})</h3>
-      <p>${escapeHtml(th.body)}</p>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <span class="badge" style="background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:#fff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700;">
+          ${escapeHtml(th.badge || `${idx + 1}-MODUL • NAZARIYA VA TA'LIM`)}
+        </span>
+        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">Sinf / Daraja: ${escapeHtml(level)}</span>
+      </div>
+      <h3 style="margin-top:0;">📌 ${escapeHtml(th.title)}</h3>
+      <p style="line-height:1.75; font-size:1.02rem;">${escapeHtml(th.body)}</p>
       ${th.code ? `<pre class="code-sample"><code>${escapeHtml(th.code)}</code></pre>` : ""}
+      ${th.practice ? `
+        <div style="background:rgba(16, 185, 129, 0.12); border-left:4px solid #10b981; padding:12px 16px; border-radius:8px; margin-top:14px; color:#6ee7b7; font-size:14px;">
+          <strong>🧪 Amaliy Mashg'ulot & Ko'rsatma:</strong> ${escapeHtml(th.practice)}
+        </div>
+      ` : ""}
     </div>
   `).join("");
 
@@ -634,11 +656,16 @@ function openSubjectTheory(subjectId) {
   const sampleQuestions = build30QuestionTest(subjectId, level).questions.slice(0, 5);
   const practicalHtml = sampleQuestions.map((sq, i) => {
     const rightAns = sq.options.find(o => o.isCorrect).text;
-    return `<div class="theory-block">
-      <h3>🔬 Amaliy Mashg'ulot va Tahlil №${i + 1}</h3>
-      <p><strong>Masala / Vazifa:</strong> ${escapeHtml(sq.question)}</p>
-      <p style="color:#34d399; margin-top:6px;"><strong>✅ To'g'ri Yechim:</strong> ${escapeHtml(rightAns)}</p>
-      <p style="color:#cbd5e1; margin-top:4px;"><em>Izoh: ${escapeHtml(sq.explanation)}</em></p>
+    return `<div class="theory-block" style="border-left:4px solid #3b82f6;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="background:rgba(59,130,246,0.18); color:#60a5fa; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:700;">
+          🔬 Laboratoriya & Amaliy Test №${i + 1}
+        </span>
+        <span style="font-size:11px; color:#94a3b8;">Haqiqiy DTM & Mutaxassislik Savoli</span>
+      </div>
+      <p style="font-weight:600; font-size:1.02rem;">${escapeHtml(sq.question)}</p>
+      <p style="color:#34d399; margin-top:8px;"><strong>✅ To'g'ri Yechim:</strong> ${escapeHtml(rightAns)}</p>
+      <p style="color:#cbd5e1; margin-top:4px; font-size:0.92rem;"><em>💡 Izoh va Qonuniyat: ${escapeHtml(sq.explanation)}</em></p>
     </div>`;
   }).join("");
 
@@ -1337,11 +1364,16 @@ function executeCertificateDownload(format) {
     img.crossOrigin = "anonymous";
     const svgDataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr);
     img.onload = () => {
-      // High-Resolution A4 Landscape Canvas (2246 x 1588 px = 2x A4 297x210mm)
+      // Adaptive High-Resolution A4 Landscape Canvas (up to 8K Ultra HD crispness, safe across mobile & desktop OS)
+      const isMobileOS = /iphone|ipad|ipod|android/i.test(navigator.userAgent || "");
+      const maxSafeScale = isMobileOS ? 2.2 : 3.2;
+      const scale = Math.min(maxSafeScale, Math.max(1.5, Number(window.IK_ACTIVE_QUALITY_SCALE) || 2.5));
       const canvas = document.createElement("canvas");
-      canvas.width = 2246;
-      canvas.height = 1588;
+      canvas.width = Math.round(1123 * scale);
+      canvas.height = Math.round(794 * scale);
       const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.fillStyle = "#071024";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -1518,17 +1550,18 @@ function seedInitialForumPosts() {
       id: "POST-101",
       author: "Rustamov Abrorbek Jamshid o'g'li",
       role: "Talaba (Med Texnikum 2-kurs)",
-      category: "Sayt haqida bildirgi va minnatdorchilik",
-      content: "Assalomu alaykum! Imkoniyatlar Kaliti sayti iPhone va Androidda ham juda tez va qulay ishlayapti. Anatomiya, Farmakologiya va Biologiyadan 5 marta takroran A'lo baho olib, QR-kodli A4 Elektron Sertifikatimni PDF va PNG formatda yuklab oldim!",
+      category: "🩺 Tibbiyot & Klinik amaliyot",
+      content: "Assalomu alaykum! Imkoniyatlar Kaliti sayti orqali Anatomiya, Fiziologiya va Farmakologiyadan takrorlanmaydigan testlarni ishlab chiqdim. Shoshilinch tibbiy yordam va qon guruhlari bo'yicha amaliy savollar ayni klinik amaliyotga mos tuzilgan!",
       startTime: "14:10:05",
       elapsedTime: "00:12:40",
       endTime: "14:22:45",
       createdAt: "Bugun",
+      likes: 14,
       replies: [
         {
           author: `Imkoniyatlar Kaliti Admini (${ADMIN_EMAIL})`,
           isAdmin: true,
-          text: "Va alaykum assalom, Abrorbek! Yuksak natijangiz va 5x A'lo A4 Sertifikatingiz bilan tabriklaymiz! O'qish va kelgusi kasbiy faoliyatingizda ulkan zafarlar tilaymiz!",
+          text: "Va alaykum assalom, Abrorbek! Har bir fan bo'yicha 30 talik testlar endi 100% takrorlanmaydigan haqiqiy kasbiy savollar bilan to'ldirildi. Muvaffaqiyat tilaymiz!",
           time: "14:25:10"
         }
       ]
@@ -1536,27 +1569,35 @@ function seedInitialForumPosts() {
     {
       id: "POST-102",
       author: "Ergashev Sardorbek Karim o'g'li",
-      role: "Tarmoq Muhandisi",
-      category: "Savol-javob (Telekommunikatsiya va IT)",
-      content: "L3 Switch, SFP+ modullar, PoE IP kameralar va NVR ulanish chizmalari juda tushunarli qilib berilgan ekan. Hamkasblar, uzoq masofali 20 km optik liniyaga qaysi SFP modulni tavsiya qilasizlar?",
+      role: "Tarmoq & Dastur Muhandisi",
+      category: "💻 Dasturlash & IT tajribalari",
+      content: "HTML5, CSS3, JavaScript, Python va Telekom tarmoqlaridan testlarni yechdim. Savollar bir-biriga o'xshamaydi, ayniqsa Event Loop, CSS Flexbox/Grid va SFP+ optik modullar bo'yicha amaliy misollar juda zo'r tushuntirilgan!",
       startTime: "15:02:11",
       elapsedTime: "00:08:19",
       endTime: "15:10:30",
       createdAt: "Bugun",
+      likes: 19,
       replies: [
         {
-          author: "Mahmudov Dilshod (Foydalanuvchi)",
+          author: "Dilshodbek Veb-Dasturchi",
           isAdmin: false,
-          text: "20 km masofa uchun Single-Mode OS2 optik kabel va 1310nm/1550nm BiDi WDM SFP+ (20km LR) modul eng maqbul yechim!",
-          time: "15:14:00"
-        },
-        {
-          author: `Imkoniyatlar Kaliti Admini (${ADMIN_EMAIL})`,
-          isAdmin: true,
-          text: "To'ppa-to'g'ri! Saytimizning 'Telekom va Qurilmalar Chizmasi' bo'limida SFP/SFP+ va BiDi modullarning to'liq sxemasi ham keltirilgan.",
-          time: "15:18:22"
+          text: "Haqiqatan ham! Ranglar mavzusini o'zgartirish (Theme Customizer) qo'shilgani ham ko'zni charchatmaslik uchun ajoyib qulaylik bo'libdi.",
+          time: "15:15:20"
         }
       ]
+    },
+    {
+      id: "POST-103",
+      author: "Nigora Karimova (O'qituvchi)",
+      role: "Tilshunoslik & Maktab Pedagogi",
+      category: "🌍 Chet tillari & Lug'at boyligi",
+      content: "Tojik, Turk, Afg'on, Ingliz va Nemis tillari bo'yicha darsliklar va testlar boyitilibdi. Ayniqsa bog'cha she'rlari va maktabga tayyorgarlik bo'limi tarbiyachilar uchun ayni muddao!",
+      startTime: "16:20:00",
+      elapsedTime: "00:05:15",
+      endTime: "16:25:15",
+      createdAt: "Bugun",
+      likes: 27,
+      replies: []
     }
   ];
   saveForumPosts();
@@ -1570,38 +1611,58 @@ function renderForumPosts() {
   const listEl = document.getElementById("forumPostsContainer");
   if (!listEl) return;
 
-  listEl.innerHTML = AppState.forumPosts.map((post, pIdx) => `
+  const currentFilter = AppState.activeForumFilter || "all";
+  const filteredPosts = AppState.forumPosts.filter(post => {
+    if (currentFilter === "all") return true;
+    const cat = (post.category || "").toLowerCase();
+    const cont = (post.content || "").toLowerCase();
+    if (currentFilter === "prog") return cat.includes("dasturlash") || cat.includes("it") || cont.includes("html") || cont.includes("js") || cont.includes("python");
+    if (currentFilter === "med") return cat.includes("tibbiyot") || cat.includes("klinik") || cont.includes("anatomiya") || cont.includes("farmakologiya");
+    if (currentFilter === "lang") return cat.includes("til") || cat.includes("lug'at") || cont.includes("ingliz") || cont.includes("turk") || cont.includes("tojik");
+    if (currentFilter === "science") return cat.includes("aniq") || cat.includes("tabiiy") || cont.includes("matematika") || cont.includes("fizika") || cont.includes("kimyo");
+    if (currentFilter === "preschool") return cat.includes("bog'cha") || cat.includes("maktab") || cont.includes("she'r");
+    return true;
+  });
+
+  listEl.innerHTML = filteredPosts.map((post, pIdx) => `
     <div class="forum-post">
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
         <div>
           <strong style="color:#38bdf8; font-size:1.02rem;">👤 ${escapeHtml(post.author)}</strong>
-          <span class="subject-tag" style="margin-left:8px;">${escapeHtml(post.category)}</span>
+          <span class="subject-tag" style="margin-left:8px; background:rgba(56,189,248,0.15); color:#a5f3fc; border:1px solid rgba(56,189,248,0.3); border-radius:12px; padding:2px 10px; font-size:12px;">${escapeHtml(post.category)}</span>
         </div>
         <div style="font-size:0.78rem; color:var(--text-dim); font-family:monospace;">
-          ⏱️ Boshladi: ${escapeHtml(post.startTime)} | Bajardi: ${escapeHtml(post.elapsedTime)} | Tugatdi: ${escapeHtml(post.endTime)}
+          ⏱️ Boshladi: ${escapeHtml(post.startTime)} | Vaqt: ${escapeHtml(post.elapsedTime)} | ${escapeHtml(post.createdAt || "Bugun")}
         </div>
       </div>
 
-      <p style="margin-bottom:12px;">${escapeHtml(post.content)}</p>
+      <p style="margin-bottom:12px; line-height:1.65; font-size:0.98rem;">${escapeHtml(post.content)}</p>
+
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+        <button type="button" class="btn btn-secondary" onclick="likeForumPost(${pIdx})" style="padding:4px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+          👍 Foydali (${post.likes || 0})
+        </button>
+        <span style="font-size:12px; color:var(--text-dim);">${(post.replies || []).length} ta javob</span>
+      </div>
 
       <div id="replies_${post.id}">
         ${(post.replies || []).map(rep => `
-          <div class="forum-reply ${rep.isAdmin ? "admin-reply" : ""}">
+          <div class="forum-reply ${rep.isAdmin ? "admin-reply" : ""}" style="background:rgba(30, 41, 59, 0.85); border-left:3px solid ${rep.isAdmin ? '#fbbf24' : '#38bdf8'}; padding:10px 14px; border-radius:8px; margin-top:8px;">
             <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px;">
               <strong style="color:${rep.isAdmin ? "#fbbf24" : "#34d399"};">
                 ${rep.isAdmin ? "👑 " : "💬 "}${escapeHtml(rep.author)}
               </strong>
               <span style="color:var(--text-dim);">${escapeHtml(rep.time)}</span>
             </div>
-            <p style="font-size:0.9rem;">${escapeHtml(rep.text)}</p>
+            <p style="font-size:0.9rem; margin:0;">${escapeHtml(rep.text)}</p>
           </div>
         `).join("")}
       </div>
 
-      <!-- Reply Form for both Users and Admin -->
+      <!-- Reply Form for Users and Admin -->
       <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
-        <input type="text" id="replyInput_${pIdx}" class="form-input" style="flex:1; min-width:200px; padding:8px 12px;" placeholder="Ushbu bildirgiga foydalanuvchi yoki Admin sifatida javob yozing...">
-        <button class="btn btn-secondary" onclick="addForumReply(${pIdx}, false)">💬 Foydalanuvchi javobi</button>
+        <input type="text" id="replyInput_${pIdx}" class="form-input" style="flex:1; min-width:200px; padding:8px 12px;" placeholder="Ushbu ma'lumotga fikr yoki javob yozing...">
+        <button class="btn btn-secondary" onclick="addForumReply(${pIdx}, false)">💬 Javob qaytarish</button>
         <button class="btn btn-gold" onclick="addForumReply(${pIdx}, true)">👑 Admin (${ADMIN_EMAIL}) javobi</button>
       </div>
     </div>
@@ -1639,6 +1700,9 @@ function handleNewForumPost(e) {
   textEl.value = "";
   forumDraftStartTime = new Date();
   renderForumPosts();
+  if (commentsChannel) {
+    try { commentsChannel.postMessage({ type: 'NEW_COMMENT', post: newPost }); } catch(_) {}
+  }
 }
 
 function addForumReply(postIndex, asAdmin) {
@@ -2009,8 +2073,468 @@ function escapeXml(str) {
 /* ==========================================================================
    DOM READY BOOTSTRAP
    ========================================================================== */
+
+/* ==========================================================================
+   THEME & COLOR CUSTOMIZER (FOYDALANUVCHI SAYT RANGINI O'ZGARTIRISHI)
+   ========================================================================== */
+const THEME_PRESETS = {
+  "default": {
+    name: "Koinot Neon (Standart)",
+    vars: {
+      "--primary": "#3b82f6",
+      "--primary-glow": "rgba(59, 130, 246, 0.45)",
+      "--bg-dark": "#070d19",
+      "--bg-card": "rgba(15, 23, 42, 0.88)",
+      "--text-main": "#f8fafc",
+      "--text-muted": "#cbd5e1",
+      "--accent": "#f59e0b",
+      "--border-glass": "rgba(148, 163, 184, 0.22)"
+    }
+  },
+  "emerald": {
+    name: "Zumrad Yashil (Tabiat & Tibbiyot)",
+    vars: {
+      "--primary": "#10b981",
+      "--primary-glow": "rgba(16, 185, 129, 0.45)",
+      "--bg-dark": "#051f18",
+      "--bg-card": "rgba(6, 44, 33, 0.90)",
+      "--text-main": "#ecfdf5",
+      "--text-muted": "#a7f3d0",
+      "--accent": "#34d399",
+      "--border-glass": "rgba(16, 185, 129, 0.25)"
+    }
+  },
+  "ocean": {
+    name: "Moviy Okean (Chuqur Firuza)",
+    vars: {
+      "--primary": "#0284c7",
+      "--primary-glow": "rgba(2, 132, 199, 0.45)",
+      "--bg-dark": "#041628",
+      "--bg-card": "rgba(10, 36, 64, 0.90)",
+      "--text-main": "#f0f9ff",
+      "--text-muted": "#bae6fd",
+      "--accent": "#38bdf8",
+      "--border-glass": "rgba(56, 189, 248, 0.25)"
+    }
+  },
+  "gold": {
+    name: "Qirollik Oltini (Royal Gold / Amber)",
+    vars: {
+      "--primary": "#d97706",
+      "--primary-glow": "rgba(217, 119, 6, 0.45)",
+      "--bg-dark": "#1d1203",
+      "--bg-card": "rgba(45, 28, 6, 0.90)",
+      "--text-main": "#fffbeb",
+      "--text-muted": "#fde68a",
+      "--accent": "#fbbf24",
+      "--border-glass": "rgba(245, 158, 11, 0.25)"
+    }
+  },
+  "ruby": {
+    name: "Yoqut Qizil (Crimson Ruby)",
+    vars: {
+      "--primary": "#e11d48",
+      "--primary-glow": "rgba(225, 29, 72, 0.45)",
+      "--bg-dark": "#1a050d",
+      "--bg-card": "rgba(46, 10, 22, 0.90)",
+      "--text-main": "#fff1f2",
+      "--text-muted": "#fecdd3",
+      "--accent": "#fb7185",
+      "--border-glass": "rgba(225, 29, 72, 0.25)"
+    }
+  },
+  "cyber": {
+    name: "Kiberpank Neon (Magenta & Cyan)",
+    vars: {
+      "--primary": "#ec4899",
+      "--primary-glow": "rgba(236, 72, 153, 0.45)",
+      "--bg-dark": "#130722",
+      "--bg-card": "rgba(33, 12, 56, 0.90)",
+      "--text-main": "#fae8ff",
+      "--text-muted": "#e9d5ff",
+      "--accent": "#06b6d4",
+      "--border-glass": "rgba(236, 72, 153, 0.25)"
+    }
+  },
+  "amoled": {
+    name: "AMOLED Dark (To'q Qora & Kontrast)",
+    vars: {
+      "--primary": "#6366f1",
+      "--primary-glow": "rgba(99, 102, 241, 0.45)",
+      "--bg-dark": "#000000",
+      "--bg-card": "#0c0d12",
+      "--text-main": "#ffffff",
+      "--text-muted": "#94a3b8",
+      "--accent": "#a855f7",
+      "--border-glass": "rgba(255, 255, 255, 0.15)"
+    }
+  },
+  "light": {
+    name: "Kunduzgi Oq (Clean Light Mode)",
+    vars: {
+      "--primary": "#2563eb",
+      "--primary-glow": "rgba(37, 99, 235, 0.25)",
+      "--bg-dark": "#f8fafc",
+      "--bg-card": "rgba(255, 255, 255, 0.96)",
+      "--text-main": "#0f172a",
+      "--text-muted": "#334155",
+      "--accent": "#d97706",
+      "--border-glass": "rgba(15, 23, 42, 0.15)"
+    }
+  }
+};
+
+let activeUserTheme = {
+  preset: "default",
+  customVars: {},
+  fontScale: "normal"
+};
+
+function initUserTheme() {
+  try {
+    const raw = storageGet("ik_user_custom_theme");
+    if (raw) {
+      activeUserTheme = { ...activeUserTheme, ...JSON.parse(raw) };
+    }
+  } catch (_) {}
+  applyActiveThemeToDom();
+}
+
+function applyActiveThemeToDom() {
+  const root = document.documentElement;
+  const preset = THEME_PRESETS[activeUserTheme.preset] || THEME_PRESETS["default"];
+  
+  // Apply preset vars
+  Object.entries(preset.vars).forEach(([k, v]) => {
+    root.style.setProperty(k, v);
+  });
+
+  // Apply custom color overrides if any
+  if (activeUserTheme.customVars) {
+    Object.entries(activeUserTheme.customVars).forEach(([k, v]) => {
+      if (v) root.style.setProperty(k, v);
+    });
+  }
+
+  // Font scale
+  if (activeUserTheme.fontScale === "large") {
+    root.style.fontSize = "17px";
+  } else if (activeUserTheme.fontScale === "xlarge") {
+    root.style.fontSize = "18px";
+  } else {
+    root.style.fontSize = "16px";
+  }
+
+  // Update theme pickers inputs if modal is open
+  const pColor = root.style.getPropertyValue("--primary").trim() || "#3b82f6";
+  const bColor = root.style.getPropertyValue("--bg-dark").trim() || "#070d19";
+  const cColor = root.style.getPropertyValue("--bg-card").trim() || "#0f172a";
+  const tColor = root.style.getPropertyValue("--text-main").trim() || "#f8fafc";
+
+  const elP = document.getElementById("themePrimaryColor");
+  const elB = document.getElementById("themeBgDarkColor");
+  const elC = document.getElementById("themeBgCardColor");
+  const elT = document.getElementById("themeTextColor");
+
+  if (elP && pColor.startsWith("#")) elP.value = pColor;
+  if (elB && bColor.startsWith("#")) elB.value = bColor;
+  if (elC && cColor.startsWith("#")) elC.value = cColor;
+  if (elT && tColor.startsWith("#")) elT.value = tColor;
+
+  const elPcode = document.getElementById("themePrimaryColorCode");
+  const elBcode = document.getElementById("themeBgDarkColorCode");
+  const elCcode = document.getElementById("themeBgCardColorCode");
+  const elTcode = document.getElementById("themeTextColorCode");
+  if (elPcode) elPcode.textContent = pColor;
+  if (elBcode) elBcode.textContent = bColor;
+  if (elCcode) elCcode.textContent = cColor;
+  if (elTcode) elTcode.textContent = tColor;
+}
+
+function openThemeModal() {
+  const modal = document.getElementById("themeModal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    applyActiveThemeToDom();
+  }
+}
+
+function closeThemeModal() {
+  const modal = document.getElementById("themeModal");
+  if (modal) modal.classList.add("hidden");
+  storageSet("ik_user_custom_theme", JSON.stringify(activeUserTheme));
+}
+
+function applyPresetTheme(presetKey) {
+  if (!THEME_PRESETS[presetKey]) return;
+  activeUserTheme.preset = presetKey;
+  activeUserTheme.customVars = {}; // Reset custom overrides when preset chosen
+  applyActiveThemeToDom();
+  storageSet("ik_user_custom_theme", JSON.stringify(activeUserTheme));
+
+  // Highlight active chip
+  document.querySelectorAll(".theme-presets-grid .theme-chip-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.toLowerCase().includes(presetKey));
+  });
+}
+
+function onCustomColorChange() {
+  const elP = document.getElementById("themePrimaryColor");
+  const elB = document.getElementById("themeBgDarkColor");
+  const elC = document.getElementById("themeBgCardColor");
+  const elT = document.getElementById("themeTextColor");
+
+  activeUserTheme.customVars = {
+    "--primary": elP ? elP.value : undefined,
+    "--primary-glow": elP ? `${elP.value}73` : undefined,
+    "--bg-dark": elB ? elB.value : undefined,
+    "--bg-card": elC ? elC.value : undefined,
+    "--text-main": elT ? elT.value : undefined
+  };
+
+  applyActiveThemeToDom();
+  storageSet("ik_user_custom_theme", JSON.stringify(activeUserTheme));
+}
+
+function setFontScale(scale) {
+  activeUserTheme.fontScale = scale;
+  applyActiveThemeToDom();
+  storageSet("ik_user_custom_theme", JSON.stringify(activeUserTheme));
+}
+
+function resetDefaultTheme() {
+  activeUserTheme = {
+    preset: "default",
+    customVars: {},
+    fontScale: "normal"
+  };
+  applyActiveThemeToDom();
+  storageSet("ik_user_custom_theme", JSON.stringify(activeUserTheme));
+}
+
+
+/* ==========================================================================
+   USER ACTIVITY, 5-STAR RATING & VIRAL RECOMMENDATION SYSTEM
+   ========================================================================== */
+function initUserActivity() {
+  try {
+    const raw = storageGet("ik_user_activity_v1");
+    if (raw) {
+      AppState.activity = { ...AppState.activity, ...JSON.parse(raw) };
+    } else {
+      AppState.activity = {
+        visits: 1,
+        testsPassed: AppState.stats.solvedTests || 0,
+        theoriesRead: 0,
+        fiveStarCount: 0,
+        referralPower: 1,
+        tierTitle: "Yangi Bilim Izlovchi"
+      };
+    }
+  } catch (_) {
+    AppState.activity = {
+      visits: 1,
+      testsPassed: 0,
+      theoriesRead: 0,
+      fiveStarCount: 0,
+      referralPower: 1,
+      tierTitle: "Yangi Bilim Izlovchi"
+    };
+  }
+
+  // Increment session visit count
+  AppState.activity.visits = (AppState.activity.visits || 0) + 1;
+  recomputeReferralPower();
+  saveUserActivity();
+  updateActivityUI();
+}
+
+function saveUserActivity() {
+  storageSet("ik_user_activity_v1", JSON.stringify(AppState.activity));
+}
+
+function recomputeReferralPower() {
+  const act = AppState.activity;
+  // Power formula: 1 + (visits/3) + (fiveStarCount * 2) + (testsPassed * 3) + (theoriesRead * 1)
+  const power = Math.max(1, 1 + Math.floor((act.visits || 1) / 3) + ((act.fiveStarCount || 0) * 2) + ((act.testsPassed || 0) * 3) + Math.floor((act.theoriesRead || 0) / 2));
+  act.referralPower = power;
+
+  if (power >= 40) {
+    act.tierTitle = "🌟 Imkoniyatlar VIP Lideri (Cheksiz Imtiyoz)";
+  } else if (power >= 20) {
+    act.tierTitle = "👑 Oltin Elchi & Mentor (5x Sertifikat Kafolati)";
+  } else if (power >= 10) {
+    act.tierTitle = "🔥 Ilg'or Bilimdon & Ustoz";
+  } else if (power >= 5) {
+    act.tierTitle = "⚡ Faol Ilm O'rganuvchi";
+  } else {
+    act.tierTitle = "🌱 Yangi Bilim Izlovchi";
+  }
+}
+
+function trackUserActivity(action) {
+  if (!AppState.activity) initUserActivity();
+  const act = AppState.activity;
+
+  if (action === 'testPassed') {
+    act.testsPassed = (act.testsPassed || 0) + 1;
+  } else if (action === 'theoryRead') {
+    act.theoriesRead = (act.theoriesRead || 0) + 1;
+  } else if (action === 'fiveStar') {
+    act.fiveStarCount = (act.fiveStarCount || 0) + 1;
+  }
+
+  recomputeReferralPower();
+  saveUserActivity();
+  updateActivityUI();
+}
+
+function updateActivityUI() {
+  const act = AppState.activity || { visits: 1, testsPassed: 0, theoriesRead: 0, fiveStarCount: 0, referralPower: 1, tierTitle: "Yangi Bilim Izlovchi" };
+
+  document.querySelectorAll(".js-user-visits-count").forEach(el => el.textContent = act.visits);
+  document.querySelectorAll(".js-user-tests-count").forEach(el => el.textContent = act.testsPassed);
+  document.querySelectorAll(".js-user-theories-count").forEach(el => el.textContent = act.theoriesRead);
+  document.querySelectorAll(".js-user-stars-count").forEach(el => el.textContent = act.fiveStarCount);
+  document.querySelectorAll(".js-referral-power-val").forEach(el => el.textContent = `${act.referralPower}x`);
+  document.querySelectorAll(".js-user-tier-badge").forEach(el => el.textContent = act.tierTitle);
+
+  // Update star widget visual if given
+  const widget = document.getElementById("homeStarWidget");
+  if (widget && act.fiveStarCount > 0) {
+    const stars = widget.querySelectorAll("span");
+    stars.forEach(s => s.classList.add("active"));
+  }
+}
+
+function give5StarRating(stars = 5) {
+  trackUserActivity('fiveStar');
+  fireConfetti(window.innerWidth / 2, window.innerHeight / 2);
+
+  const notice = document.getElementById("referralCopyNotice");
+  if (notice) {
+    notice.innerHTML = `🎉 <strong>Katta Rahmat! Siz 5 yulduz baho berdingiz!</strong> Sizning taklif qilish quvvatingiz <strong>+${2 * stars}x</strong> ga oshdi! Do'stlaringizga tavsiya eting!`;
+    setTimeout(() => {
+      if (notice) notice.innerHTML = "";
+    }, 7000);
+  }
+
+  // Highlight widget
+  const widget = document.getElementById("homeStarWidget");
+  if (widget) {
+    widget.querySelectorAll("span").forEach(s => s.classList.add("active"));
+  }
+}
+
+function fireConfetti(originX, originY) {
+  const colors = ["#f59e0b", "#3b82f6", "#10b981", "#ec4899", "#8b5cf6", "#fbbf24"];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = `${originX}px`;
+    piece.style.top = `${originY}px`;
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    const tx = (Math.random() - 0.5) * 600;
+    const ty = (Math.random() - 0.5) * 500 - 150;
+    piece.style.setProperty("--tx", `${tx}px`);
+    piece.style.setProperty("--ty", `${ty}px`);
+    document.body.appendChild(piece);
+    setTimeout(() => {
+      if (piece.parentNode) piece.parentNode.removeChild(piece);
+    }, 2500);
+  }
+}
+
+function getPersonalReferralUrl() {
+  const power = (AppState.activity && AppState.activity.referralPower) || 1;
+  const userRef = (AppState.user && AppState.user.lastName)
+    ? encodeURIComponent(`${AppState.user.lastName}_${AppState.user.firstName}`)
+    : "bilimdon";
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?ref=${userRef}&power=${power}x`;
+}
+
+function shareReferralLink(platform) {
+  const url = getPersonalReferralUrl();
+  const power = (AppState.activity && AppState.activity.referralPower) || 1;
+  const text = encodeURIComponent(
+    `🌟 Do'stim! «IMKONIYATLAR KALITI» platformasida 43 ta fan, cheksiz tillar lug'ati (A1–C2), maktab darsliklari va 5x A'lo A4 Sertifikat bor! Mening taklif quvvatim: ${power}x VIP! Birgalikda o'rganamiz:`
+  );
+
+  if (platform === 'telegram') {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+  } else if (platform === 'whatsapp') {
+    window.open(`https://api.whatsapp.com/send?text=${text}%20${encodeURIComponent(url)}`, '_blank');
+  }
+}
+
+function copyPersonalReferralLink() {
+  const url = getPersonalReferralUrl();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      const notice = document.getElementById("referralCopyNotice");
+      if (notice) {
+        notice.textContent = "✅ Shaxsiy taklif havolangiz nusxalandi! Do'stlaringizga yuboring va taklif quvvatingizni oshiring!";
+        setTimeout(() => { if (notice) notice.textContent = ""; }, 5000);
+      }
+    }).catch(() => {});
+  }
+}
+
+
+/* ==========================================================================
+   COMMUNITY COMMENTS & REAL-TIME FORUM ENHANCEMENTS
+   ========================================================================== */
+let commentsChannel = null;
+try {
+  if (typeof BroadcastChannel !== 'undefined') {
+    commentsChannel = new BroadcastChannel('ik_community_comments');
+    commentsChannel.onmessage = (event) => {
+      if (event.data && event.data.type === 'NEW_COMMENT') {
+        if (!AppState.forumPosts.some(p => p.id === event.data.post.id)) {
+          AppState.forumPosts.unshift(event.data.post);
+          saveForumPosts();
+          renderForumPosts();
+        }
+      } else if (event.data && event.data.type === 'LIKE_COMMENT') {
+        const target = AppState.forumPosts.find(p => p.id === event.data.postId);
+        if (target) {
+          target.likes = (target.likes || 0) + 1;
+          saveForumPosts();
+          renderForumPosts();
+        }
+      }
+    };
+  }
+} catch (_) {}
+
+function filterForumCategory(cat) {
+  AppState.activeForumFilter = cat;
+  document.querySelectorAll("#forumCategoryFilterBar .theme-chip-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("onclick").includes(`'${cat}'`));
+  });
+  renderForumPosts();
+}
+
+function likeForumPost(pIdx) {
+  const post = AppState.forumPosts[pIdx];
+  if (!post) return;
+  post.likes = (post.likes || 0) + 1;
+  saveForumPosts();
+  renderForumPosts();
+
+  if (commentsChannel) {
+    try {
+      commentsChannel.postMessage({ type: 'LIKE_COMMENT', postId: post.id });
+    } catch (_) {}
+  }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
   loadState();
+  initUserTheme();
+  initUserActivity();
   initLiveTopbar();
   setLanguage(currentLang);
   updateDashboardStatsUI();
